@@ -1,5 +1,5 @@
 import Vec2 from "./Vec2"
-import {rand} from './utils';
+import {rand, mouse} from './utils';
 
 export default class Boid {
   constructor(flock, position, velocity, mass) {
@@ -12,7 +12,7 @@ export default class Boid {
     this.mass = mass || 10;
     this.flock = flock;
     this.max_speed = 150;
-    this.max_force = 10;
+    this.max_force = 150;
   }
 
   static random(flock) {
@@ -26,15 +26,15 @@ export default class Boid {
   };
 
   getForces() {
-    let center = new Vec2(window.innerWidth / 2, window.innerHeight / 2);
-    return this.getFlockForces().add(center.subtract(this.position).truncate(20));
+    return this.getFlockForces().add((new Vec2(mouse.x, mouse.y)).subtract(this.position).truncate(20));
   };
 
   getFlockForces() {
     let cohesionForce = new Vec2();
     let avoidanceForce = new Vec2();
     let alignmentForce = new Vec2();
-    for(let other of this.flock) {
+    for (let i = 0; i < this.flock.length; i++) {
+      let other = this.flock[i];
       if (this === other) {
         continue;
       }
@@ -42,6 +42,7 @@ export default class Boid {
       if (dist < 100) {
         // avoid close boids, cuadratically
         avoidanceForce = avoidanceForce.add(this.position.subtract(other.position).normalize().multiply(600/dist));
+        alignmentForce = other.velocity.subtract(this.velocity).truncate(5); //.add()
       }
       if (dist < 250) {
         // go to close boids, linearly
@@ -49,6 +50,8 @@ export default class Boid {
       }
     }
     cohesionForce = cohesionForce.truncate(10);
+    avoidanceForce = avoidanceForce.truncate(125);
+    alignmentForce = alignmentForce.truncate(2);
     this.force = cohesionForce.add(avoidanceForce).add(alignmentForce);
     return this.force;
   };
@@ -56,7 +59,7 @@ export default class Boid {
   //END TODO
 
   update(interval) {
-    let acceleration = this.getForces().truncate(this.max_force);//(this.getForce().truncate(this.max_force)).divide(this.mass);
+    let acceleration = this.getForces().truncate(this.max_force).multiply(interval/100);//(this.getForce().truncate(this.max_force)).divide(this.mass);
     this.velocity = this.velocity.add(acceleration).truncate(this.max_speed);
     this.position = this.position.add(this.velocity.multiply(interval/1000));
   };
@@ -71,6 +74,7 @@ export default class Boid {
     ctx.scale(scale, scale);
 
     ctx.lineWidth = 0.5;
+    ctx.strokeStyle = "#171717";
     ctx.beginPath();
       ctx.moveTo(2, 0);
       ctx.lineTo(-4, 2);
@@ -79,15 +83,5 @@ export default class Boid {
       ctx.closePath();
     ctx.stroke();
     ctx.restore();
-
-    ctx.beginPath();
-      let {x, y} = this.position;
-      ctx.moveTo(x, y);
-      let p = this.position.add(this.force);
-      x = p.x;
-      y = p.y;
-      ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.beginPath();
   };
 }

@@ -3,6 +3,7 @@ export default class Vec2 {
     constructor(x, y) {
       this.x = x || 0;
       this.y = y || 0;
+      this._length = null;
     }
 
     static fromPolar(length, angle) {
@@ -16,7 +17,10 @@ export default class Vec2 {
     };
 
     length() {
-      return Math.sqrt(this.x * this.x + this.y * this.y);
+      if (this._length !== null) {
+        return this._length;
+      }
+      return this._length = Math.sqrt(this.x * this.x + this.y * this.y);
     };
 
     normalize() {

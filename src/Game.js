@@ -3,21 +3,23 @@ import Boid from './Boid';
 export default class Game {
 	constructor(canvas) {
 		this.canvas = canvas;
-		let flock = new Set()
+		let flock = []
 		for(let i = 0; i < 150; i ++) {
-			flock.add(Boid.random(flock));	
+			flock.push(Boid.random(flock));	
 		}
 		this.flock = flock;
 	}
 
 	update(interval) {
-		for (let boid of this.flock) {
+		for (let i = 0; i < this.flock.length; i++) {
+			let boid = this.flock[i];
 			boid.update(interval);
 		}
 	}
 
 	render(ctx) {
-		for (let boid of this.flock) {
+		for (let i = 0; i < this.flock.length; i++) {
+			let boid = this.flock[i];
 			boid.render(ctx);
 		}
 	}
