@@ -3,7 +3,6 @@ export default class Vec2 {
     constructor(x, y) {
       this.x = x || 0;
       this.y = y || 0;
-      this._length = null;
     }
 
     static fromPolar(length, angle) {
@@ -17,15 +16,11 @@ export default class Vec2 {
     };
 
     length() {
-      if (this._length !== null) {
-        return this._length;
-      }
-      return this._length = Math.sqrt(this.x * this.x + this.y * this.y);
+      return Math.sqrt(this.x * this.x + this.y * this.y);
     };
 
     normalize() {
-      let m;
-      m = this.length();
+      let m = this.length();
       if (m > 0) {
         return this.divide(m);
       } else {
@@ -33,9 +28,13 @@ export default class Vec2 {
       }
     };
 
+    withLength(length) {
+      return this.normalize().multiply(length);
+    };
+
     truncate(max_len) {
       if (this.length() > max_len) {
-        return this.normalize().multiply(max_len);
+        return this.withLength(max_len);
       } else {
         return this.copy();
       }
@@ -65,15 +64,15 @@ export default class Vec2 {
     };
 
     multiply(n) {
-      return new Vec2(this.x * n, this.y * n, this.z * n);
+      return new Vec2(this.x * n, this.y * n);
     };
 
     divide(n) {
-      return new Vec2(this.x / n, this.y / n, this.z / n);
+      return new Vec2(this.x / n, this.y / n);
     };
 
     dot(other) {
-      return this.x * other.x + this.y * other.y + this.z * other.z;
+      return this.x * other.x + this.y * other.y;
     };
 
     rotate(angle) {

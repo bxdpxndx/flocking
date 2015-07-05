@@ -1,5 +1,8 @@
 import Vec2 from "./Vec2"
 import {rand, mouse} from './utils';
+import seek from './behaviours/seek';
+
+let gaussian = x => Math.exp(-x * x)
 
 export default class Boid {
   constructor(flock, position, velocity, mass) {
@@ -12,21 +15,22 @@ export default class Boid {
     this.mass = mass || 10;
     this.flock = flock;
     this.max_speed = 150;
-    this.max_force = 150;
+    this.max_force = 300;
+    this.behaviours = [];
+    this.forces = []
   }
 
   static random(flock) {
-    let b;
-    b = new Boid(flock,
+    let b = new Boid(flock,
       new Vec2(rand(0, window.innerWidth), rand(0, window.innerHeight)), 
       Vec2.fromPolar(rand(1, 100), rand(0, 2 * Math.PI)),
-      rand(3, 5)
+      rand(2, 10)
     );
     return b;
   };
 
   getForces() {
-    return this.getFlockForces().add((new Vec2(mouse.x, mouse.y)).subtract(this.position).truncate(20));
+    return this.force = this.getFlockForces().add((new Vec2(mouse.x, mouse.y)).subtract(this.position).truncate(100));
   };
 
   getFlockForces() {
@@ -39,27 +43,21 @@ export default class Boid {
         continue;
       }
       let dist = this.position.dist(other.position);
-      if (dist < 100) {
-        // avoid close boids, cuadratically
-        avoidanceForce = avoidanceForce.add(this.position.subtract(other.position).normalize().multiply(600/dist));
-        alignmentForce = other.velocity.subtract(this.velocity).truncate(5); //.add()
+      if (dist < 150) {
+        avoidanceForce = avoidanceForce.add(this.position.subtract(other.position).withLength(other.mass * 200 * gaussian(dist/40)));
+        alignmentForce = other.velocity.subtract(this.velocity).withLength(20);
       }
       if (dist < 250) {
-        // go to close boids, linearly
-        cohesionForce = cohesionForce.add(other.position.subtract(this.position).truncate(100));
+        cohesionForce = cohesionForce.add(other.position.subtract(this.position).withLength(50));
       }
     }
-    cohesionForce = cohesionForce.truncate(10);
-    avoidanceForce = avoidanceForce.truncate(125);
-    alignmentForce = alignmentForce.truncate(2);
-    this.force = cohesionForce.add(avoidanceForce).add(alignmentForce);
-    return this.force;
+    cohesionForce = cohesionForce.truncate(100);
+
+    return cohesionForce.add(avoidanceForce).add(alignmentForce);
   };
 
-  //END TODO
-
   update(interval) {
-    let acceleration = this.getForces().truncate(this.max_force).multiply(interval/100);//(this.getForce().truncate(this.max_force)).divide(this.mass);
+    let acceleration = this.getForces().divide(this.mass).truncate(this.max_force).multiply(interval/1000);
     this.velocity = this.velocity.add(acceleration).truncate(this.max_speed);
     this.position = this.position.add(this.velocity.multiply(interval/1000));
   };
@@ -73,7 +71,7 @@ export default class Boid {
     ctx.rotate(this.velocity.heading());
     ctx.scale(scale, scale);
 
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 0.3;
     ctx.strokeStyle = "#171717";
     ctx.beginPath();
       ctx.moveTo(2, 0);
@@ -83,5 +81,12 @@ export default class Boid {
       ctx.closePath();
     ctx.stroke();
     ctx.restore();
+
+    ctx.beginPath();
+      let {x, y} = this.position;
+      ctx.moveTo(x,y);
+      ({x, y} = this.position.add(this.force.divide(10)));
+      ctx.lineTo(x, y);
+    ctx.stroke();
   };
 }

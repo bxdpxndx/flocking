@@ -17,7 +17,6 @@ export function setCanvasFullscreen(canvas, ctx) {
 	    ctx.backingStorePixelRatio || 1;
 	var ratio = devicePixelRatio / backingStoreRatio;
 
-	console.log("ratio:", ratio)
 	canvas.height = ratio * window.innerHeight;
 	canvas.width = ratio * window.innerWidth;
 	canvas.style.height = window.innerHeight;
